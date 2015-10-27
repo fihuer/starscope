@@ -279,7 +279,6 @@ class Starscope::DB
       else
         @tables[tbl] ||= []
         @tables[tbl] << self.class.normalize_record(file, name, args)
-
         if args[:line_no]
           line_cache ||= File.readlines(file)
           lines ||= Array.new(line_cache.length)
@@ -301,6 +300,7 @@ class Starscope::DB
     end
 
   rescue => e
+    p e.backtrace
     @output.normal("#{extractor} raised \"#{e}\" while extracting #{file}")
   end
 

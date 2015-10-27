@@ -1,6 +1,7 @@
 module Starscope::Exportable
   CTAGS_DEFAULT_PATH = 'tags'
   CSCOPE_DEFAULT_PATH = 'cscope.out'
+  ETAGS_DEFAULT_PATH = 'TAGS'
 
   class UnknownExportFormatError < StandardError; end
 
@@ -10,6 +11,8 @@ module Starscope::Exportable
       path ||= CTAGS_DEFAULT_PATH
     when :cscope
       path ||= CSCOPE_DEFAULT_PATH
+    when :etags
+      path ||= ETAGS_DEFAULT_PATH
     else
       fail UnknownExportFormatError
     end
@@ -27,12 +30,49 @@ module Starscope::Exportable
       export_ctags(io)
     when :cscope
       export_cscope(io)
+    when :etags
+      export_etags(io)
     else
       fail UnknownExportFormatError
     end
   end
 
   private
+
+  def export_etags(file)
+    tags = {}
+    tags.default = ""
+    defs = (@tables[:defs] || {}).sort_by { |x| x[:name][-1].to_s }
+    defs.each do |record|
+      tags[record[:file]] += etag_line(record, @meta[:files][record[:file]])
+    end
+    tags.each do |src_file, tag_definition|
+      def_size = tag_definition.bytesize
+      file.puts "\x0c\n"
+      file.puts "#{src_file},#{def_size}\n"
+      file.puts tag_definition
+    end
+  end
+
+  def etag_line(rec, file)
+    return unless rec[:line_no]
+    byte_offset, content = byte_offset_from_line(rec[:file], rec[:line_no])
+    ret = "#{content}\x7f#{rec[:name][-1]}\x01#{rec[:line_no]},#{byte_offset}\n"
+    ret
+  end
+
+  def byte_offset_from_line(file, line)
+    pos = nil
+    content = nil
+    File.open(file, 'r') do |f|
+      lines = f.each_line
+      (line-2).times { lines.next }
+      pos = f.pos
+      lines.next
+      content = lines.next.rstrip
+    end
+    return pos, content
+  end
 
   def export_ctags(file)
     file.puts <<END
@@ -51,7 +91,11 @@ END
 
   def ctag_line(rec, file)
     line = line_for_record(rec).gsub('/', '\/')
-    ret = "#{rec[:name][-1]}\t#{rec[:file]}\t/^#{line}$/"
+    if rec[:line_no]
+      ret = "#{rec[:name][-1]}\t#{rec[:file]}\t:#{rec[:line_no]}"
+    else
+      ret = "#{rec[:name][-1]}\t#{rec[:file]}\t/^#{line}$/"
+    end
 
     ext = ctag_ext_tags(rec, file)
     unless ext.empty?
