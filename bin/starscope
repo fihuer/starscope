@@ -98,9 +98,9 @@ END
 
   opts.separator <<END
 \nEXPORTING
-    At the moment two export formats are supported: 'ctags' and 'cscope'. If
+    At the moment two export formats are supported: 'ctags', 'cscope' and 'etags'. If
     you don't specify a path, the output is written to the file '#{Starscope::Exportable::CTAGS_DEFAULT_PATH}' (for
-    ctags) or '#{Starscope::Exportable::CSCOPE_DEFAULT_PATH}' (for cscope) in the current directory.
+    ctags), '#{Starscope::Exportable::CSCOPE_DEFAULT_PATH}' (for cscope) or '#{Starscope::Exportable::ETAGS_DEFAULT_PATH}' (for etags) in the current directory.
 END
 end.parse!
 
