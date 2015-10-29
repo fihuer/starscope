@@ -1,3 +1,4 @@
+# rubocop:disable Style/HashSyntax
 module Starscope::Lang
   module Puppet
     VERSION = 1
@@ -51,7 +52,7 @@ module Starscope::Lang
             yield :defs, token[:value], :line_no => token[:line], :type => :class
             reset_state
           elsif @override
-            if @override[:value] == "Class" # That's class override/reference
+            if @override[:value] == 'Class' # That's class override/reference
               yield :defs, token[:value], :line_no => token[:line], :type => :class
             else
               yield add_resource(@override[:value], token[:value], token[:line])
@@ -101,9 +102,7 @@ module Starscope::Lang
           @resource && @resource = nil
           @in_args && reset_state
         when :RPARENT
-          if @function
-            reset_state
-          end
+          @function && reset_state
         else
           @sym = nil
         end
@@ -132,3 +131,5 @@ module Starscope::Lang
     end
   end
 end
+
+# rubocop:enable Style/HashSyntax

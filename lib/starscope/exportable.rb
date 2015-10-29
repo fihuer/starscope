@@ -41,10 +41,15 @@ module Starscope::Exportable
 
   def export_etags(file)
     tags = {}
-    tags.default = ""
+    tags.default = ''
     defs = (@tables[:defs] || {}).sort_by { |x| x[:name][-1].to_s }
     defs.each do |record|
       tags[record[:file]] += etag_line(record, @meta[:files][record[:file]])
+    end
+    if @files
+      @files.each do |_, f|
+        f.close
+      end
     end
     tags.each do |src_file, tag_definition|
       def_size = tag_definition.bytesize
@@ -62,15 +67,14 @@ module Starscope::Exportable
   end
 
   def byte_offset_from_line(file, line)
-    pos = nil
-    content = nil
-    File.open(file, 'r') do |f|
-      lines = f.each_line
-      (line-2).times { lines.next }
-      pos = f.pos
-      lines.next
-      content = lines.next.rstrip
-    end
+    @files ||= {}
+    @files[file] || @files[file] = File.open(file, 'r')
+    @files[file].rewind
+    lines = @files[file].each_line
+    (line - 2).times { lines.next }
+    pos = @files[file].pos
+    lines.next
+    content = lines.next.rstrip
     return pos, content
   end
 
